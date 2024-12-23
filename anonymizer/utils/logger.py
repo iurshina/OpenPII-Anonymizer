@@ -1,7 +1,7 @@
 import logging
 import sys
 
-def setup_logger(name: str, log_level: str = "INFO"):
+def setup_logger(name: str, log_level: str = "DEBUG"):
     """
     Creates and configures a logger with the given name and log level.
 
