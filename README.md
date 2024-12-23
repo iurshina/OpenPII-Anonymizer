@@ -1,4 +1,4 @@
-*OpenPII-Anonymizer
+# OpenPII-Anonymizer
 
 The **PII Anonymization API** is a RESTful service designed to detect, resolve, and anonymize personally identifiable information (PII) in text. The system leverages **Large Language Models (LLMs)** to provide accurate and context-aware anonymization, including features like:
 
@@ -104,6 +104,7 @@ python -m unittest discover -s tests
     - Explore rephrasing capabilities to reduce more subtle forms of PII.
 
 3. **TODOs**:
+    - Consistent LLM output
     - Set up extended evaluation.
     - Improve prompt engineering.
     - Refine logging.
