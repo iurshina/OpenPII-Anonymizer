@@ -31,7 +31,7 @@ def call_azure_llm(prompt: str, engine: str = AZURE_ENGINE, max_tokens: int = 10
 def detect_pii(input_text: str) -> list:
     from anonymizer.llm.prompts import PII_DETECTION_PROMPT
 
-    prompt = PII_DETECTION_PROMPT.format(text=input_text)
+    prompt = PII_DETECTION_PROMPT.format(input_text=input_text)
     response = call_azure_llm(prompt)
     try:
         pii_list = eval(response)
@@ -56,8 +56,8 @@ def resolve_anaphora(input_text: str, pii_data: list) -> dict:
 # Step 3: Public-Interest vs. PII Differentiation
 def differentiate_public_interest(resolved_text: str) -> dict:
     from anonymizer.llm.prompts import INFO_CLASSIFICATION_PROMPT
-    
-    prompt = INFO_CLASSIFICATION_PROMPT.format(input_text=resolved_text)
+
+    prompt = INFO_CLASSIFICATION_PROMPT.format(input_text=resolved_text)    
     response = call_azure_llm(prompt)
     try:
         result = eval(response)
