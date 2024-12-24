@@ -1,10 +1,11 @@
-# OpenPII-Anonymizer
+# AnonyScribe
 
-The **PII Anonymization API** is a RESTful service designed to detect, resolve, and anonymize personally identifiable information (PII) in text. The system leverages **Large Language Models (LLMs)** to provide accurate and context-aware anonymization, including features like:
+The **AnonyScribe** is a RESTful service designed to detect, resolve, and anonymize personally identifiable information (PII) in text. The system leverages **Large Language Models (LLMs)** to provide accurate and context-aware anonymization, including features like:
 
 - **PII Detection**: Identifies sensitive entities like names, locations, and organizations.
 - **Anaphora/Coreference Resolution**: Ensures consistent placeholders for references like pronouns or repeated entities.
 - **Public-Interest vs. PII Differentiation**: Redacts sensitive PII while retaining and tagging public-interest information.
+- **Context-based rephasing**: Rephrases based on context to maintain coherence and preserve critical information. 
 
 ### **Current State**
 - **LLM Integration**: The project currently uses **commercial LLMs** (Azure OpenAI Service) for its capabilities. 
