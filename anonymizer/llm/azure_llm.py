@@ -1,7 +1,13 @@
 from openai import AzureOpenAI
 import json
+
 from anonymizer.utils.config import settings
 from anonymizer.utils.logger import setup_logger
+from anonymizer.db.queries import save_llm_call
+from anonymizer.db.database import SessionLocal
+from anonymizer.db.models import PromptType
+
+logger = setup_logger("azure_llm")
 
 AZURE_API_KEY = settings.AZURE_API_KEY
 AZURE_ENDPOINT = settings.AZURE_ENDPOINT 
@@ -14,7 +20,12 @@ client = AzureOpenAI(
     api_key=AZURE_API_KEY
 )
 
-logger = setup_logger("azure_llm")
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def call_azure_llm(prompt: str, engine: str = AZURE_ENGINE, max_tokens: int = 1000) -> str:
     """
@@ -42,14 +53,23 @@ def detect_pii(input_text: str) -> list:
     from anonymizer.llm.prompts import PII_DETECTION_PROMPT
 
     prompt = PII_DETECTION_PROMPT.format(input_text=input_text)
+    
     response = call_azure_llm(prompt)
     logger.debug(f"Raw Response: {response}")
-    
+
+    db = next(get_db())
+    save_llm_call(
+        session=db,
+        prompt_type=PromptType.PII_DETECTION,
+        prompt=prompt,
+        output=response
+    )
+
     try:
         pii_list = json.loads(response)
         return pii_list
     except Exception as e:
-        print(f"Error parsing PII detection response: {e}")
+        logger.error(f"Error parsing PII detection response: {e}", exc_info=True)
         return []
 
 # Step 2: Anaphora Resolution
@@ -57,29 +77,47 @@ def resolve_anaphora(input_text: str, pii_data: list) -> dict:
     from anonymizer.llm.prompts import ANAPHORA_RESOLUTION_PROMPT
 
     prompt = ANAPHORA_RESOLUTION_PROMPT.format(input_text=input_text, pii_data=pii_data)
+    
     response = call_azure_llm(prompt)
     logger.debug(f"Raw Response: {response}")
+
+    db = next(get_db())
+    save_llm_call(
+        session=db,
+        prompt_type=PromptType.ANAPHORA_RESOLUTION,
+        prompt=prompt,
+        output=response
+    )
 
     try:
         resolved_data = json.loads(response)
         return resolved_data
     except Exception as e:
-        print(f"Error parsing anaphora resolution response: {e}")
+        logger.error(f"Error parsing anaphora resolution response: {e}", exc_info=True)
         return {"resolved_text": input_text, "entities": []}
 
 # Step 3: Public-Interest vs. PII Differentiation
 def differentiate_public_interest(resolved_text: str) -> dict:
     from anonymizer.llm.prompts import INFO_CLASSIFICATION_PROMPT
 
-    prompt = INFO_CLASSIFICATION_PROMPT.format(input_text=resolved_text)    
+    prompt = INFO_CLASSIFICATION_PROMPT.format(input_text=resolved_text)
+    
     response = call_azure_llm(prompt)
     logger.debug(f"Raw Response: {response}")
+
+    db = next(get_db())
+    save_llm_call(
+        session=db,
+        prompt_type=PromptType.PUBLIC_INTEREST_DIFFERENTIATION,
+        prompt=prompt,
+        output=response
+    )
 
     try:
         result = json.loads(response)
         return result
     except Exception as e:
-        print(f"Error parsing public-interest response: {e}")
+        logger.error(f"Error parsing public-interest response: {e}", exc_info=True)
         return {"anonymized_text": resolved_text, "public_info": []}
 
 def anonymize_text(input_text: str) -> dict:
@@ -98,3 +136,26 @@ def anonymize_text(input_text: str) -> dict:
         "public_info": final_result["public_info"],
         "resolved_entities": resolved_data["entities"]
     }
+
+def anonymize_text_aware_of_context(input_text: str):
+    from anonymizer.llm.prompts import CONTEXT_AWARE_ANONYMIZATION_PROMPT
+
+    prompt = CONTEXT_AWARE_ANONYMIZATION_PROMPT.format(input_text=input_text)
+    
+    response = call_azure_llm(prompt)
+    logger.debug(f"Raw Response: {response}")
+
+    db = next(get_db())
+    save_llm_call(
+        session=db,
+        prompt_type=PromptType.CONTEXT_BASED_REPHRASING,
+        prompt=prompt,
+        output=response
+    )
+
+    try:
+        result = json.loads(response)
+        return result
+    except Exception as e:
+        logger.error(f"Error parsing context-aware rephrasing response: {e}", exc_info=True)
+        return {}
