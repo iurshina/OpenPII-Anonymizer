@@ -1,12 +1,12 @@
 from .models import LLMCall
+from .models import PromptType
 from sqlalchemy.orm import Session
 
-def save_llm_call(session: Session, input_text: str, output_text: str, pii_types: list):
+def save_llm_call(session: Session, prompt: str, output: str, prompt_type: PromptType):
     """
     Save an LLM call's input, output, and metadata to the database.
     """
-    pii_types_str = ",".join(pii_types) if pii_types else None
-    llm_call = LLMCall(input_text=input_text, output_text=output_text, pii_types=pii_types_str)
+    llm_call = LLMCall(prompt=prompt, output=output, prompt_type=prompt_type)
     session.add(llm_call)
     session.commit()
     session.refresh(llm_call)
